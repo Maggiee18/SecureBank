@@ -1,0 +1,19 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:securebank;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+banking:
+  security:
+    jwt:
+      secret: test-only-secret-0123456789-abcdefghijklmnopqrstuvwxyz
+      expiration: PT15M
+    login:
+      max-attempts: 3
+      lock-duration: PT5M
+
+logging:
+  level:
+    com.securebank: INFO

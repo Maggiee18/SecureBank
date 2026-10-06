@@ -1,0 +1,14 @@
+# Local development only. Activate with SPRING_PROFILES_ACTIVE=dev.
+# The secret below is public (it is in Git), so it must never be used outside a developer machine.
+spring:
+  datasource:
+    password: ${DB_PASSWORD:securebank}
+
+banking:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:dev-only-secret-change-me-0123456789-abcdefghijklmnop}
+
+logging:
+  level:
+    com.securebank: DEBUG
