@@ -1,5 +1,7 @@
 # SecureBank API
 
+[![CI](https://github.com/Maggiee18/SecureBank/actions/workflows/ci.yml/badge.svg)](https://github.com/Maggiee18/SecureBank/actions/workflows/ci.yml)
+
 A digital banking REST API built with Java 17 and Spring Boot 3. It covers customer registration
 and login, bank accounts, deposits, withdrawals, fund transfers and paginated statements, with
 most of the effort going into what makes money movement safe: atomic transactions, optimistic
