@@ -31,8 +31,17 @@ services:
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       SWAGGER_ENABLED: ${SWAGGER_ENABLED:-true}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:5173}
     ports:
       - "8080:8080"
+
+  web:
+    build: ./frontend
+    container_name: securebank-web
+    depends_on:
+      - app
+    ports:
+      - "3000:80"
 
 volumes:
   securebank-data:

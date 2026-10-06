@@ -3,7 +3,9 @@ package com.securebank.service;
 import com.securebank.dto.account.AccountResponse;
 import com.securebank.dto.account.BalanceResponse;
 import com.securebank.dto.account.CreateAccountRequest;
+import com.securebank.dto.admin.AdminAccountResponse;
 import com.securebank.dto.admin.UpdateAccountStatusRequest;
+import com.securebank.dto.common.PageResponse;
 import com.securebank.entity.Account;
 import com.securebank.entity.AccountStatus;
 import com.securebank.entity.AuditAction;
@@ -15,6 +17,7 @@ import com.securebank.repository.CustomerRepository;
 import com.securebank.util.AccountNumberGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -86,6 +89,13 @@ public class AccountService {
     public Account findByNumber(String accountNumber) {
         return accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new ResourceNotFoundException("Account", accountNumber));
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<AdminAccountResponse> listAllAccounts(AccountStatus status, Pageable pageable) {
+        return PageResponse.from((status == null
+                ? accountRepository.findAllBy(pageable)
+                : accountRepository.findByStatus(status, pageable)).map(AdminAccountResponse::from));
     }
 
     @Transactional

@@ -335,4 +335,19 @@ class MoneyFlowIntegrationTest extends IntegrationTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").isArray());
     }
+
+    @Test
+    void adminCanListAccountsWithOwners() throws Exception {
+        String token = registerAndLogin();
+        createAccount(token);
+        String adminToken = login(ADMIN_EMAIL, ADMIN_PASSWORD);
+
+        mockMvc.perform(get("/api/v1/admin/accounts")
+                        .header("Authorization", bearer(adminToken))
+                        .param("status", "ACTIVE")
+                        .param("size", "5"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].ownerEmail").exists())
+                .andExpect(jsonPath("$.content[0].status").value("ACTIVE"));
+    }
 }

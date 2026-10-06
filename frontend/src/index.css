@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Design tokens as RGB triplets so Tailwind can apply opacity (bg-brand/10). */
+:root {
+  --bg: 245 247 251;
+  --surface: 255 255 255;
+  --surface-2: 240 243 248;
+  --border: 226 232 240;
+  --ink: 15 23 42;
+  --muted: 100 116 139;
+  --brand: 15 39 84;
+  --brand-fg: 255 255 255;
+  --accent: 16 185 129;
+  --danger: 220 38 38;
+  --warning: 217 119 6;
+  --success: 5 150 105;
+  color-scheme: light;
+}
+
+.dark {
+  --bg: 7 11 20;
+  --surface: 14 20 34;
+  --surface-2: 21 29 47;
+  --border: 34 45 66;
+  --ink: 226 232 240;
+  --muted: 140 155 179;
+  --brand: 129 166 255;
+  --brand-fg: 7 11 20;
+  --accent: 52 211 153;
+  --danger: 248 113 113;
+  --warning: 251 191 36;
+  --success: 52 211 153;
+  color-scheme: dark;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    @apply bg-bg font-sans text-ink;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand/60 ring-offset-2 ring-offset-bg;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-border bg-surface shadow-card;
+  }
+  .label {
+    @apply mb-1.5 block text-sm font-medium text-ink;
+  }
+  .field {
+    @apply block w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm text-ink
+      placeholder:text-muted/70 transition focus:border-brand/60 focus:outline-none focus:ring-4 focus:ring-brand/10;
+  }
+  .field-error {
+    @apply border-danger/70 focus:border-danger focus:ring-danger/10;
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  /* The hero card: deep navy into emerald, readable in both themes. */
+  .hero-gradient {
+    background:
+      radial-gradient(120% 140% at 100% 0%, rgb(16 185 129 / 0.45) 0%, transparent 55%),
+      radial-gradient(90% 120% at 0% 100%, rgb(59 130 246 / 0.35) 0%, transparent 60%),
+      linear-gradient(135deg, #0b1f45 0%, #0f2f63 55%, #0c3b4a 100%);
+  }
+}

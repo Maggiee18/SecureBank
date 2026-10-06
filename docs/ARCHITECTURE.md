@@ -95,6 +95,7 @@ unknown users (failed logins) and must never be blocked or cascaded by changes t
 | POST | /api/v1/transfers | owner of source | 201 (Idempotency-Key **required**) |
 | GET | /api/v1/accounts/{accountNumber}/transactions | owner | 200, paged |
 | PATCH | /api/v1/admin/accounts/{accountNumber}/status | ADMIN | 200 |
+| GET | /api/v1/admin/accounts | ADMIN | 200, paged, owner fetched with the account |
 | GET | /api/v1/admin/audit-logs | ADMIN | 200, paged |
 | GET | /actuator/health, /actuator/info | public | 200 |
 
@@ -164,3 +165,10 @@ pick the same row) and call the existing `MoneyOperationFacade` with a determini
 key such as `recurring-{id}-{executionDate}`. Re-running a job after a crash then cannot debit
 twice. Not implemented: it adds scheduling and failure-retry policy that the project does not need
 to demonstrate its core ideas.
+
+## 8. Web client
+
+`frontend/` is a React single page app. In development Vite proxies `/api` to the backend; in Docker Compose
+nginx serves the build and proxies `/api`, so both run on one origin. When the UI is hosted separately
+(Vercel, Netlify) the API allows it through `CORS_ALLOWED_ORIGINS`, and exposes `X-Request-ID`,
+`Idempotent-Replayed` and `Retry-After` so the browser can read them.

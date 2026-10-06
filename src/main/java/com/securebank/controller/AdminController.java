@@ -2,9 +2,11 @@ package com.securebank.controller;
 
 import com.securebank.config.OpenApiConfig;
 import com.securebank.dto.account.AccountResponse;
+import com.securebank.dto.admin.AdminAccountResponse;
 import com.securebank.dto.admin.AuditLogResponse;
 import com.securebank.dto.admin.UpdateAccountStatusRequest;
 import com.securebank.dto.common.PageResponse;
+import com.securebank.entity.AccountStatus;
 import com.securebank.security.AuthenticatedCustomer;
 import com.securebank.service.AccountService;
 import com.securebank.service.AuditService;
@@ -43,6 +45,15 @@ public class AdminController {
     public AdminController(AccountService accountService, AuditService auditService) {
         this.accountService = accountService;
         this.auditService = auditService;
+    }
+
+    @GetMapping("/accounts")
+    @Operation(summary = "List all accounts with their owners, optionally filtered by status")
+    public PageResponse<AdminAccountResponse> getAccounts(
+            @RequestParam(required = false) AccountStatus status,
+            @ParameterObject
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return accountService.listAllAccounts(status, pageable);
     }
 
     @PatchMapping("/accounts/{accountNumber}/status")

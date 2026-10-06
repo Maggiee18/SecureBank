@@ -1,11 +1,19 @@
-# SecureBank API
+# SecureBank
 
 [![CI](https://github.com/Maggiee18/SecureBank/actions/workflows/ci.yml/badge.svg)](https://github.com/Maggiee18/SecureBank/actions/workflows/ci.yml)
 
-A digital banking REST API built with Java 17 and Spring Boot 3. It covers customer registration
+A digital banking application: a Java 17 / Spring Boot 3 REST API plus a React web app. It covers customer registration
 and login, bank accounts, deposits, withdrawals, fund transfers and paginated statements, with
 most of the effort going into what makes money movement safe: atomic transactions, optimistic
 locking, idempotent transfers, audit logging and request tracing.
+
+![Dashboard](docs/screenshots/dashboard.png)
+
+| Transfer review with idempotency key | Account statement and balance trend |
+|---|---|
+| ![Transfer review](docs/screenshots/transfer-review.png) | ![Account](docs/screenshots/account.png) |
+| **Dark mode** | **Operations console (admin)** |
+| ![Dark mode](docs/screenshots/dashboard-dark.png) | ![Admin accounts](docs/screenshots/admin-accounts.png) |
 
 This is a portfolio project, not a production bank. The last sections spell out what is
 simplified and what a real deployment would need.
@@ -42,13 +50,18 @@ afternoon.
 | Operations | Actuator health, liveness and readiness probes, info |
 | Docs | Swagger UI with JWT "Authorize" button |
 | Tests | Mockito unit tests and Spring Boot integration tests (MockMvc + H2), including concurrency and rollback |
-| Delivery | Multi stage Dockerfile and Docker Compose with PostgreSQL |
+| Web app | React 19 + TypeScript + Tailwind: dashboard, accounts, deposits and withdrawals, three step transfers with a live idempotency replay demo, statements with balance trend, profile, admin console, dark mode, mobile layout |
+| Delivery | Multi stage Dockerfiles and Docker Compose (PostgreSQL + API + web on nginx), GitHub Actions CI for both |
 
 ## Tech stack
 
-Java 17, Spring Boot 3.3, Spring Web, Spring Data JPA (Hibernate 6), Spring Security 6,
+**Backend:** Java 17, Spring Boot 3.3, Spring Web, Spring Data JPA (Hibernate 6), Spring Security 6,
 JJWT 0.12, Jakarta Bean Validation, PostgreSQL 16, Flyway, springdoc OpenAPI, Spring Boot
 Actuator, SLF4J with Logback, JUnit 5, Mockito, H2 (tests only), Docker.
+
+**Frontend:** React 19, TypeScript, Vite, Tailwind CSS, React Router, TanStack Query, lucide icons. No UI component
+library: the small design system (buttons, fields, modals, badges, tokens for light and dark) lives in
+`frontend/src/components/ui`.
 
 No Lombok, no MapStruct, no Redis, no message broker. Each one would hide or add something I
 would then have to explain without it adding to what the project is trying to show.
@@ -91,6 +104,17 @@ com.securebank
 │   └── idempotency   IdempotencyService, RequestHasher, ClaimResult
 ├── util          account number and transaction reference generators, masking
 └── web           RequestIdFilter, RequestContext
+```
+
+```
+frontend/src
+├── main.tsx, App.tsx      providers and routes (auth, admin and public guards)
+├── lib/                   api client + error model, endpoints, auth session, theme, toasts, formatting
+├── hooks/queries.ts       TanStack Query hooks and cache invalidation after money moves
+├── components/ui/         design system: Button, Field, Modal, Badge, feedback states, Logo
+├── components/layout/     AppShell (sidebar, header), AuthLayout
+├── components/money.tsx   account cards, statement rows, balance trend, deposit/withdraw/open account modals
+└── pages/                 Login, Register, Dashboard, Accounts, AccountDetail, Transfer, Profile, admin/*
 ```
 
 `docs/ARCHITECTURE.md` has the full design notes.
@@ -150,6 +174,7 @@ first".
 | POST | `/api/v1/transfers` | owner of source | 201 |
 | GET | `/api/v1/accounts/{accountNumber}/transactions` | owner | 200 |
 | PATCH | `/api/v1/admin/accounts/{accountNumber}/status` | ADMIN | 200 |
+| GET | `/api/v1/admin/accounts?status=` | ADMIN | 200 |
 | GET | `/api/v1/admin/audit-logs` | ADMIN | 200 |
 | GET | `/actuator/health`, `/actuator/health/liveness`, `/actuator/health/readiness`, `/actuator/info` | public | 200 |
 
@@ -390,6 +415,29 @@ Run them with:
 mvn test
 ```
 
+## Web app
+
+`frontend/` is a single page React app that talks to the API.
+
+| Screen | What it shows off |
+|---|---|
+| Sign in / register | Password rules mirrored from the backend, generic login errors, lockout message with retry time |
+| Overview | Total balance, account cards, recent activity merged across accounts |
+| Account | Balance, deposit and withdraw modals, paginated statement (failed attempts included), balance trend rebuilt from the statement |
+| Transfer | Details → review → receipt. A fresh `Idempotency-Key` per transfer; on a timeout the "Retry safely" button resends the same key. The receipt has a **Send the same request again** button that shows the server replaying the original result with `Idempotent-Replayed: true` |
+| Profile | Edit name and phone, session expiry |
+| Admin | All accounts with owners, block / unblock / close with a reason, audit log filtered by customer |
+
+Design decisions:
+
+* **Every request sends its own `X-Request-ID`** (`web-xxxxxxxx`), so even a request that never got a response
+  has a reference the customer can quote. Error toasts show it with a copy button.
+* **The JWT is kept in sessionStorage** so a refresh keeps you signed in but closing the tab does not. The app
+  signs out exactly when the token expires and on any 401. A real bank would use an httpOnly cookie through a
+  backend for frontend, so page scripts can never read the token.
+* **Admin screens are hidden for customers, but that is only convenience**: the API enforces ROLE_ADMIN itself.
+* Amounts are sent as strings like `"2000.00"`, never as floating point numbers.
+
 ## Swagger
 
 Open http://localhost:8080/swagger-ui.html
@@ -422,7 +470,8 @@ cp .env.example .env        # then edit the values, especially JWT_SECRET
 docker compose up --build
 ```
 
-API on http://localhost:8080, PostgreSQL on localhost:5432.
+Web app on http://localhost:3000, API on http://localhost:8080, PostgreSQL on localhost:5432. nginx serves the
+web app and forwards `/api` to the backend, so the browser sees a single origin.
 
 ### Option 2: Maven + your own PostgreSQL
 
@@ -444,6 +493,20 @@ mvn spring-boot:run
 Flyway creates the tables on first start. Without the `dev` profile you must set `JWT_SECRET`
 yourself.
 
+Then start the web app (Node 20 or newer):
+
+```bash
+cd frontend
+npm install
+npm run dev                 # http://localhost:5173, /api is proxied to localhost:8080
+```
+
+### Deploying the web app separately
+
+On Vercel or Netlify, set the project root to `frontend`, the build command to `npm run build`, the output to
+`dist`, and `VITE_API_BASE_URL` to your API URL. Add the web app's URL to the API's `CORS_ALLOWED_ORIGINS`.
+`vercel.json` and `public/_redirects` make client side routes like `/accounts/502133557148` work on refresh.
+
 ### Environment variables
 
 | Variable | Default | Notes |
@@ -457,6 +520,7 @@ yourself.
 | `LOGIN_LOCK_DURATION` | `PT15M` | |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | empty | if both set, an ADMIN user is created at startup |
 | `SWAGGER_ENABLED` | `true` | |
+| `CORS_ALLOWED_ORIGINS` | `http://localhost:5173,http://localhost:3000` | browser origins allowed to call the API |
 | `SERVER_PORT` | `8080` | |
 
 ## Example requests
