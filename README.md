@@ -2,6 +2,9 @@
 
 [![CI](https://github.com/Maggiee18/SecureBank/actions/workflows/ci.yml/badge.svg)](https://github.com/Maggiee18/SecureBank/actions/workflows/ci.yml)
 
+**Live demo:** [web app](https://securebank-web-mi3f.onrender.com) · [API docs (Swagger)](https://securebank-api-mku1.onrender.com/swagger-ui.html) · [health](https://securebank-api-mku1.onrender.com/actuator/health)  
+_Free hosting: the API sleeps when idle, so the first request can take a minute or two._
+
 A digital banking application: a Java 17 / Spring Boot 3 REST API plus a React web app. It covers customer registration
 and login, bank accounts, deposits, withdrawals, fund transfers and paginated statements, with
 most of the effort going into what makes money movement safe: atomic transactions, optimistic
