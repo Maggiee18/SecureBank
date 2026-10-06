@@ -1,0 +1,52 @@
+# Render Blueprint: the Spring Boot API (Docker) and the React web app (static site), both on free plans.
+# The database is a free Neon PostgreSQL project; paste its details when Render asks for them.
+services:
+  - type: web
+    name: securebank-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    region: singapore
+    healthCheckPath: /actuator/health/readiness
+    envVars:
+      - key: PORT
+        value: "8080"
+      - key: SERVER_PORT
+        value: "8080"
+      - key: DB_URL
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_POOL_SIZE
+        value: "5"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      # Free instances have 512 MB of memory: keep the JVM small.
+      - key: JAVA_OPTS
+        value: "-XX:MaxRAMPercentage=70 -XX:+UseSerialGC -Xss512k"
+
+  - type: web
+    name: securebank-web
+    runtime: static
+    rootDir: ./frontend
+    buildCommand: npm ci && VITE_API_BASE_URL=https://$API_HOST npm run build
+    staticPublishPath: ./dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: API_HOST
+        fromService:
+          name: securebank-api
+          type: web
+          property: host
